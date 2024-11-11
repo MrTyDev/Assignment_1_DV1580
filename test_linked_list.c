@@ -35,7 +35,12 @@ void capture_stdout(char *buffer, size_t size, void (*func)(Node **, Node *, Nod
     rewind(fp);
 
     // Read the content of the temporary file into the buffer
-    fread(buffer, 1, size - 1, fp); // Leave space for null terminator
+    int got=fread(buffer, 1, size - 1, fp); // Leave space for null terminator
+    if (got == 0) {
+      if (ferror(fp)!=0) {
+	printf("Problem with STDOUT.\n");
+      }
+    }
     buffer[size - 1] = '\0';        // Ensure the buffer is null-terminated
 
     // Close the temporary file
@@ -131,9 +136,6 @@ void test_list_search()
     list_cleanup(&head);
     printf_green("[PASS].\n");
 }
-
-
-
 
 void test_list_display()
 {
@@ -290,8 +292,9 @@ void test_list_display()
     }
 
     //    printf("RefRandom: '%s' \n\n", stringRandom);
-    
+
     char buffer[1024] = {0}; // Buffer to capture the output
+
     // Test case 1: Displaying full list
     capture_stdout(buffer, sizeof(buffer), (void (*)(Node **, Node *, Node *))list_display_range, &head, NULL, NULL);
     my_assert(strcmp(buffer, stringFull) == 0);
@@ -301,7 +304,6 @@ void test_list_display()
     memset(buffer, 0, sizeof(buffer)); // Clear buffer
     capture_stdout(buffer, sizeof(buffer), (void (*)(Node **, Node *, Node *))list_display_range, &head, head->next, NULL);
     my_assert(strcmp(buffer, string2Last) == 0);
-
     printf("\tFrom second node to end: %s\n", buffer);
 
     // Test case 3: Displaying list from first node to third node
@@ -317,6 +319,12 @@ void test_list_display()
     printf("\tK random node(s): %s\n", buffer);
 
     list_cleanup(&head);
+
+    free(blob);
+    free(stringFull);
+    free(string2Last);
+    free(string1third);
+    free(stringRandom);
     printf_green("  ... [PASS].\n");
 }
 
@@ -506,6 +514,7 @@ int main(int argc, char *argv[])
         printf(" 13. test_list_search_loop - Test multiple search\n");
         printf(" 14. test_list_edge_cases - Test edge cases\n");
         printf(" 0. Run all tests\n");
+	printf(" 100. Run all tests; -test_list_display() \n");
         return 1;
     }
 
@@ -513,6 +522,24 @@ int main(int argc, char *argv[])
     {
     case -1:
         printf("No tests will be executed.\n");
+        break;
+    case 100:
+        printf("Testing Basic Operations:\n");
+        test_list_init();
+        test_list_insert();
+        test_list_insert_after();
+        test_list_insert_before();
+        test_list_delete();
+        test_list_search();
+        test_list_count_nodes();
+        test_list_cleanup();
+
+        printf("\nTesting Stress and Edge Cases:\n");
+        test_list_insert_loop(1000);
+        test_list_insert_after_loop(1000);
+        test_list_delete_loop(1000);
+        test_list_search_loop(1000);
+        test_list_edge_cases();
         break;
     case 0:
         printf("Testing Basic Operations:\n");
