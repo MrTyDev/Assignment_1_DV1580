@@ -193,13 +193,14 @@ int list_count_nodes(Node** head) {
 
 void list_cleanup(Node** head) {
     Node* current = *head;
-    Node* next_node;
+    Node* next_node = NULL;
     while (current != NULL) {
         next_node = current->next;
         mem_free(current);
         current = next_node;
     }
     *head = NULL;
+    mem_deinit(); // Clean up the memory manager (I forgot this thanks)
 }
 
 
